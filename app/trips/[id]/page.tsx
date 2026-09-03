@@ -1,6 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { queryKeys } from '@/lib/queryKeys';
@@ -10,7 +11,6 @@ import { ApiError, type Trip } from '@/lib/api/types';
 import type { SeatData, Station, TripStop } from '@/lib/api/types';
 import { useAuth } from '@/lib/providers';
 import {
-  normalizeTripResponse,
   normalizeAvailableSeatsResponse,
 } from '@/lib/response';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -22,14 +22,18 @@ import SeatMap from '@/components/seats/SeatMap';
 import BookingSummaryPanel from '@/components/booking/BookingSummaryPanel';
 import ConflictBanner from '@/components/booking/ConflictBanner';
 
-function formatDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString(undefined, {
+function formatDate(iso: string | undefined) {
+  if (!iso) return '—';
+  const [year, month, day] = iso.split('-').map(Number);
+  if (!year || !month || !day) return iso;
+  const utcDate = new Date(Date.UTC(year, month - 1, day));
+  return new Intl.DateTimeFormat('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  });
+    timeZone: 'UTC',
+  }).format(utcDate);
 }
 
 function stationFromStop(
@@ -55,7 +59,7 @@ export default function TripDetailPage() {
   const tripId = Number(params.id);
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isReady } = useAuth();
 
   const [startStationId, setStartStationId] = useState<number | null>(null);
   const [endStationId, setEndStationId] = useState<number | null>(null);
@@ -75,7 +79,7 @@ export default function TripDetailPage() {
     enabled: Number.isFinite(tripId) && tripId > 0,
   });
 
-  const trip = normalizeTripResponse(data);
+  const trip = data;
 
   const seatsEnabled =
     startStationId !== null &&
@@ -175,12 +179,12 @@ export default function TripDetailPage() {
   if (!trip) {
     return (
       <EmptyState message="Trip not found.">
-        <a
+        <Link
           href="/"
           className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
           Back to trips
-        </a>
+        </Link>
       </EmptyState>
     );
   }
@@ -189,12 +193,12 @@ export default function TripDetailPage() {
     <div className="space-y-8">
       <header className="glass-panel rounded-3xl p-6 sm:p-8">
         <div>
-          <a
+          <Link
             href="/"
             className="text-sm font-medium text-blue-600 transition hover:text-blue-700 hover:underline"
           >
             ← All trips
-          </a>
+          </Link>
         </div>
         <div className="mt-4 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -283,15 +287,19 @@ export default function TripDetailPage() {
         </section>
 
         <aside className="lg:sticky lg:top-24 lg:self-start">
-          <BookingSummaryPanel
-            startStation={startStation}
-            endStation={endStation}
-            selectedSeat={selectedSeat}
-            isAuthenticated={isAuthenticated}
-            tripId={tripId}
-            onConfirm={handleConfirm}
-            isSubmitting={createBookingMutation.isPending}
-          />
+          {!isReady ? (
+            <LoadingSpinner />
+          ) : (
+            <BookingSummaryPanel
+              startStation={startStation}
+              endStation={endStation}
+              selectedSeat={selectedSeat}
+              isAuthenticated={isAuthenticated}
+              tripId={tripId}
+              onConfirm={handleConfirm}
+              isSubmitting={createBookingMutation.isPending}
+            />
+          )}
         </aside>
       </div>
     </div>

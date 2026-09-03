@@ -15,31 +15,41 @@ import { normalizeBookingResponse } from '@/lib/response';
 
 function formatDateTime(iso: string) {
   const d = new Date(iso);
-  return d.toLocaleString(undefined, {
+  return new Intl.DateTimeFormat('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
-  });
+    timeZone: 'UTC',
+  }).format(d);
 }
 
 function formatDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString(undefined, {
+  const [year, month, day] = iso.split('-').map(Number);
+  if (!year || !month || !day) return iso;
+  const utcDate = new Date(Date.UTC(year, month - 1, day));
+  return new Intl.DateTimeFormat('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  });
+    timeZone: 'UTC',
+  }).format(utcDate);
 }
 
 function isFutureDate(iso: string) {
-  const d = new Date(iso);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return d.getTime() >= today.getTime();
+  const [year, month, day] = iso.split('-').map(Number);
+  if (!year || !month || !day) return false;
+  const tripUTC = Date.UTC(year, month - 1, day);
+  const now = new Date();
+  const todayUTC = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+  );
+  return tripUTC >= todayUTC;
 }
 
 export default function BookingDetailPage() {

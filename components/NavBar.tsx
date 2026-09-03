@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/providers';
 import { logout as apiLogout } from '@/lib/api/auth';
 
 export default function NavBar() {
-  const { isAuthenticated, clearToken } = useAuth();
+  const { isAuthenticated, isReady, clearToken } = useAuth();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -39,7 +39,9 @@ export default function NavBar() {
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {isAuthenticated ? (
+          {!isReady ? (
+            <div className="h-9 w-40" aria-hidden="true" />
+          ) : isAuthenticated ? (
             <>
               <Link
                 href="/bookings"

@@ -22,6 +22,8 @@ const queryClient = new QueryClient({
 type AuthContextValue = {
   token: string | null;
   isAuthenticated: boolean;
+  /** False until localStorage has been read on the client (avoids hydration mismatch). */
+  isReady: boolean;
   setToken: (token: string) => void;
   clearToken: () => void;
 };
@@ -37,17 +39,15 @@ export function useAuth(): AuthContextValue {
 }
 
 export function Providers({ children }: { children: ReactNode }) {
-  const [token, setTokenState] = useState<string | null>(() => {
-    if (typeof window === 'undefined') {
-      return null;
-    }
-    initAuthStore();
-    return getToken();
-  });
+  // Always start as null on both server and client so SSR HTML matches
+  // the first client render. localStorage is only read after mount.
+  const [token, setTokenState] = useState<string | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     initAuthStore();
     setTokenState(getToken());
+    setIsReady(true);
   }, []);
 
   const setToken = (newToken: string) => {
@@ -64,10 +64,11 @@ export function Providers({ children }: { children: ReactNode }) {
     () => ({
       token,
       isAuthenticated: token !== null,
+      isReady,
       setToken,
       clearToken,
     }),
-    [token],
+    [token, isReady],
   );
 
   return (

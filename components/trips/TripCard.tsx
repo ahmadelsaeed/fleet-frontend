@@ -2,14 +2,18 @@ import Link from 'next/link';
 import type { Trip } from '@/lib/api/types';
 import RouteBreadcrumb from './RouteBreadcrumb';
 
-function formatDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString(undefined, {
+function formatDate(iso: string | undefined) {
+  if (!iso) return '—';
+  const [year, month, day] = iso.split('-').map(Number);
+  if (!year || !month || !day) return iso;
+  const utcDate = new Date(Date.UTC(year, month - 1, day));
+  return new Intl.DateTimeFormat('en-US', {
     weekday: 'short',
     year: 'numeric',
     month: 'short',
     day: 'numeric',
-  });
+    timeZone: 'UTC',
+  }).format(utcDate);
 }
 
 type TripCardProps = {

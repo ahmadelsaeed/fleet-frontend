@@ -1,5 +1,6 @@
 import { apiFetch } from './client';
-import type { Trip, AvailableSeatsResponse } from './types';
+import type { Trip, AvailableSeatsResponse, PaginatedResponse } from './types';
+import { normalizePaginatedTripsResponse, normalizeTripResponse } from '../response';
 
 /**
  * Fetches all trips from the backend.
@@ -7,8 +8,10 @@ import type { Trip, AvailableSeatsResponse } from './types';
  *
  * Requirements: 7.1
  */
-export function getTrips(): Promise<Trip[]> {
-  return apiFetch<Trip[]>('/trips');
+export async function getTrips(page = 1): Promise<PaginatedResponse<Trip>> {
+  const params = new URLSearchParams({ page: String(page) });
+  const response = await apiFetch<unknown>(`/trips?${params.toString()}`);
+  return normalizePaginatedTripsResponse(response);
 }
 
 /**
@@ -17,8 +20,13 @@ export function getTrips(): Promise<Trip[]> {
  *
  * Requirements: 8.1
  */
-export function getTrip(id: number): Promise<Trip> {
-  return apiFetch<Trip>(`/trips/${id}`);
+export async function getTrip(id: number): Promise<Trip> {
+  const response = await apiFetch<unknown>(`/trips/${id}`);
+  const trip = normalizeTripResponse(response);
+  if (!trip) {
+    throw new Error('Trip not found.');
+  }
+  return trip;
 }
 
 /**

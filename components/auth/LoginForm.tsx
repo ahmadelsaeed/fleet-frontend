@@ -10,17 +10,16 @@ import { ApiError } from '@/lib/api/types';
 const INVALID_CREDENTIALS = 'Invalid email/phone or password.';
 
 export default function LoginForm() {
-  const { isAuthenticated, setToken } = useAuth();
+  const { isAuthenticated, isReady, setToken } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect');
 
   useEffect(() => {
-    if (isAuthenticated) {
-      const target = redirect && redirect.startsWith('/') ? redirect : '/';
-      router.replace(target);
-    }
-  }, [isAuthenticated, redirect, router]);
+    if (!isReady || !isAuthenticated) return;
+    const target = redirect && redirect.startsWith('/') ? redirect : '/';
+    router.replace(target);
+  }, [isReady, isAuthenticated, redirect, router]);
 
   const [loginValue, setLoginValue] = useState('');
   const [password, setPassword] = useState('');

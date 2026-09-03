@@ -9,12 +9,13 @@ import ErrorBanner from '@/components/ui/ErrorBanner';
 import EmptyState from '@/components/ui/EmptyState';
 import TripCard from '@/components/trips/TripCard';
 import type { Trip } from '@/lib/api/types';
-import { unwrapArray } from '@/lib/response';
+import { useState } from 'react';
 
 export default function HomePage() {
+  const [page, setPage] = useState(1);
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: queryKeys.trips(),
-    queryFn: getTrips,
+    queryKey: queryKeys.tripsPage(page),
+    queryFn: () => getTrips(page),
   });
 
   if (isLoading) {
@@ -34,7 +35,8 @@ export default function HomePage() {
     );
   }
 
-  const trips = unwrapArray<Trip>(data);
+  const trips: Trip[] = data?.data ?? [];
+  const meta = data?.meta;
 
   if (trips.length === 0) {
     return (
@@ -67,7 +69,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="rounded-2xl border border-blue-100 bg-blue-50/80 px-4 py-3 text-sm text-blue-700 shadow-sm">
-            {trips.length} trip{trips.length === 1 ? '' : 's'} available
+            {trips.length} trip{trips.length === 1 ? '' : 's'} on this page
           </div>
         </div>
       </header>
@@ -77,6 +79,30 @@ export default function HomePage() {
           <TripCard key={trip.id} trip={trip} />
         ))}
       </div>
+
+      {meta && meta.total_pages > 1 && (
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm text-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-zinc-600">
+            Page {meta.page} of {meta.total_pages}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(meta.total_pages, p + 1))}
+            disabled={page >= meta.total_pages}
+            className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm text-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }

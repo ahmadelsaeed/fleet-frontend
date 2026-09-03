@@ -3,6 +3,8 @@ import type {
   AvailableSeatsResponse,
   Booking,
   Bus,
+  PaginatedResponse,
+  PaginationMeta,
   SeatData,
   Station,
   Trip,
@@ -89,6 +91,7 @@ function normalizeBus(raw: RawBus): Bus {
   return {
     id: raw.id,
     name: raw.name ?? raw.plate_number ?? `Bus #${raw.id}`,
+    seats_count: raw.seats_count,
   };
 }
 
@@ -212,6 +215,27 @@ export function unwrapSeats(payload: unknown): AvailableSeatsResponse | undefine
 export function normalizeTripsResponse(payload: unknown): Trip[] {
   const rawTrips = unwrapEnvelopeArray<RawTrip>(payload);
   return rawTrips.map(normalizeTrip);
+}
+
+export function normalizePaginatedTripsResponse(
+  payload: unknown,
+): PaginatedResponse<Trip> {
+  const trips = normalizeTripsResponse(payload);
+  let meta: PaginationMeta | null = null;
+
+  if (payload && typeof payload === 'object') {
+    const p = payload as Record<string, unknown>;
+    if (p.meta && typeof p.meta === 'object') {
+      const m = p.meta as Record<string, unknown>;
+      const page = m.page;
+      const totalPages = m.total_pages;
+      if (typeof page === 'number' && typeof totalPages === 'number') {
+        meta = { page, total_pages: totalPages };
+      }
+    }
+  }
+
+  return { data: trips, meta };
 }
 
 export function normalizeTripResponse(payload: unknown): Trip | undefined {

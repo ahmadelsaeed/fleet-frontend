@@ -8,20 +8,29 @@ type BookingCardProps = {
 };
 
 function formatDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString(undefined, {
+  const [year, month, day] = iso.split('-').map(Number);
+  if (!year || !month || !day) return iso;
+  const utcDate = new Date(Date.UTC(year, month - 1, day));
+  return new Intl.DateTimeFormat('en-US', {
     weekday: 'short',
     year: 'numeric',
     month: 'short',
     day: 'numeric',
-  });
+    timeZone: 'UTC',
+  }).format(utcDate);
 }
 
 function isFutureDate(iso: string) {
-  const d = new Date(iso);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return d.getTime() >= today.getTime();
+  const [year, month, day] = iso.split('-').map(Number);
+  if (!year || !month || !day) return false;
+  const tripUTC = Date.UTC(year, month - 1, day);
+  const now = new Date();
+  const todayUTC = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+  );
+  return tripUTC >= todayUTC;
 }
 
 export default function BookingCard({

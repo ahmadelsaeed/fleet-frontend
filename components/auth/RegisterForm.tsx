@@ -21,17 +21,16 @@ function errorId(field: string) {
 }
 
 export default function RegisterForm() {
-  const { isAuthenticated, setToken } = useAuth();
+  const { isAuthenticated, isReady, setToken } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect');
 
   useEffect(() => {
-    if (isAuthenticated) {
-      const target = redirect && redirect.startsWith('/') ? redirect : '/';
-      router.replace(target);
-    }
-  }, [isAuthenticated, redirect, router]);
+    if (!isReady || !isAuthenticated) return;
+    const target = redirect && redirect.startsWith('/') ? redirect : '/';
+    router.replace(target);
+  }, [isReady, isAuthenticated, redirect, router]);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

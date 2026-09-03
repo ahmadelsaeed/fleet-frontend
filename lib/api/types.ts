@@ -12,6 +12,17 @@ export type TripStop = {
 export type Bus = {
   id: number;
   name: string;
+  seats_count?: number;
+};
+
+export type PaginationMeta = {
+  page: number;
+  total_pages: number;
+};
+
+export type PaginatedResponse<T> = {
+  data: T[];
+  meta: PaginationMeta | null;
 };
 
 export type Trip = {
